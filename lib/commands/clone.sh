@@ -18,6 +18,15 @@ function clone {
 
 	local git_out
 	version_compare $GIT_VERSION 1.6.5
+
+  # if '.' or '-' in name, check out that branch!
+  local branch
+  if [ -z "${git_repo##*.*}" ] ;then
+    git_repo="${git_repo%.*}"
+    branch="${git_repo##*.}"
+    echo "detected branch $branch in repo $git_repo."
+  fi
+
 	if [[ $? != 2 ]]; then
 		git_out=$(git clone --recursive "$git_repo" "$repo_path" 2>&1)
 		[[ $? == 0 ]] || err $EX_SOFTWARE "Unable to clone $git_repo. Git says:" "$git_out"
@@ -32,6 +41,11 @@ function clone {
 		[[ $? == 0 ]] || err $EX_SOFTWARE "Unable to clone submodules for $git_repo. Git says:" "$git_out"
 		success
 	fi
+
+  git_out=$(GIT_DIR="$repo_path" git checkout "$branch" 2>&1)
+  [[ $? == 0 ]] || err $EX_SOFTWARE "Unable to checkout branch $branch. Git says:" "$git_out"
+  success
+
 	return $EX_SUCCESS
 }
 
